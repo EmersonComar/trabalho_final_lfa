@@ -1,3 +1,5 @@
+import copy
+
 class Automato_finito:
     def __init__(self):
         self.estados = {"S": {}}
@@ -216,3 +218,101 @@ class Automato_finito:
                 else:
                     print(end="\t")
             print()
+
+    def _obter_chave_real(self, estados, nome):
+        nome_limpo = str(nome).lstrip("*")
+        if nome_limpo in estados:
+            return nome_limpo
+        if f"*{nome_limpo}" in estados:
+            return f"*{nome_limpo}"
+        return None
+
+    def remover_inalcancaveis(self, estados, apontar_erros=True):
+        if not estados:
+            return {}
+
+        estado_inicial = self._obter_chave_real(estados, "S")
+        if estado_inicial is None:
+            estado_inicial = next(iter(estados))
+
+        alcancaveis = {estado_inicial}
+        fila = [estado_inicial]
+
+        while fila:
+            atual = fila.pop(0)
+            transicoes = estados.get(atual, {})
+            for destinos in transicoes.values():
+                itens = destinos if isinstance(destinos, (list, tuple, set, frozenset)) else [destinos]
+                for d in itens:
+                    chave_d = self._obter_chave_real(estados, d)
+                    if chave_d and chave_d not in alcancaveis:
+                        alcancaveis.add(chave_d)
+                        fila.append(chave_d)
+
+        inalcancaveis = set(estados.keys()) - alcancaveis
+        if inalcancaveis and apontar_erros:
+            print(f"\n[Aviso] Estados inalcançáveis detectados: {', '.join(sorted(inalcancaveis))}")
+
+        for est in inalcancaveis:
+            del estados[est]
+
+        return estados
+
+    def remover_mortos(self, estados, apontar_erros=True):
+        if not estados:
+            return {}
+
+        finais = {est for est in estados if est.startswith("*")}
+
+        grafo_reverso = {est: set() for est in estados}
+        for origem, transicoes in estados.items():
+            for destinos in transicoes.values():
+                itens = destinos if isinstance(destinos, (list, tuple, set, frozenset)) else [destinos]
+                for d in itens:
+                    chave_d = self._obter_chave_real(estados, d)
+                    if chave_d:
+                        grafo_reverso[chave_d].add(origem)
+
+        vivos = set(finais)
+        fila = list(finais)
+
+        while fila:
+            atual = fila.pop(0)
+            for anterior in grafo_reverso.get(atual, set()):
+                if anterior not in vivos:
+                    vivos.add(anterior)
+                    fila.append(anterior)
+
+        mortos = set(estados.keys()) - vivos
+        if mortos and apontar_erros:
+            print(f"\n[Aviso] Estados mortos detectados: {', '.join(mortos)}")
+
+        mortos_nomes = {est.lstrip("*") for est in mortos}
+
+        for est in mortos:
+            del estados[est]
+
+        for origem, transicoes in estados.items():
+            for simbolo in list(transicoes.keys()):
+                itens = transicoes[simbolo]
+                if isinstance(itens, list):
+                    transicoes[simbolo] = [d for d in itens if d.lstrip("*") not in mortos_nomes]
+                    if not transicoes[simbolo]:
+                        del transicoes[simbolo]
+                else:
+                    if str(itens).lstrip("*") in mortos_nomes:
+                        del transicoes[simbolo]
+
+        return estados
+
+    def minimizacao(self, estados=None, apontar_erros=True):
+        if estados is None:
+            estados = self.determinizar()
+
+        estados_min = copy.deepcopy(estados)
+        estados_min = self.remover_inalcancaveis(estados_min, apontar_erros=apontar_erros)
+        estados_min = self.remover_mortos(estados_min, apontar_erros=apontar_erros)
+        estados_min = self.remover_inalcancaveis(estados_min, apontar_erros=False)
+
+        return estados_min
+
