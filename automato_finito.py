@@ -59,15 +59,69 @@ class Automato_finito:
             self._incrementar_chave()
             self.nao_terminal = self.prox_nao_terminal
 
-    def _procura_n_terminal(self, texto):
-        inicio = texto.find('<')
-        fim = texto.find('>')
+    def processar_gramatica(self, gramaticas):
+        if isinstance(gramaticas, dict):
+            gramaticas = [gramaticas]
 
-        if inicio != -1 and fim != -1 and fim > inicio:
-            return texto[inicio + 1:fim]
+        for gramatica in gramaticas:
+            regras = gramatica.get("regras", {})
+            finais = gramatica.get("finais", set())
 
-        return None
+            todos_nt = []
+            for nt, producoes in regras.items():
+                if nt not in todos_nt:
+                    todos_nt.append(nt)
+                for terminal, alvo in producoes:
+                    if alvo is not None and alvo not in todos_nt:
+                        todos_nt.append(alvo)
 
+            mapa = {}
+            chaves = {}
+
+            for nt in todos_nt:
+                if nt == "S":
+                    mapa["S"] = "S"
+                    if "S" in finais:
+                        chaves["S"] = "*S"
+                        if "S" in self.estados:
+                            self.estados["*S"] = self.estados.pop("S")
+                        else:
+                            self.estados.setdefault("*S", {})
+                    else:
+                        chaves["S"] = "*S" if "*S" in self.estados else "S"
+                        self.estados.setdefault(chaves["S"], {})
+                else:
+                    nome = self.nao_terminal
+                    self._incrementar_chave()
+                    self.nao_terminal = self.prox_nao_terminal
+
+                    mapa[nt] = nome
+                    if nt in finais:
+                        chave = f"*{nome}"
+                        chaves[nt] = chave
+                        self.estados[chave] = {}
+                    else:
+                        chaves[nt] = nome
+                        self.estados[nome] = {}
+
+            for nt, producoes in regras.items():
+                origem_chave = chaves[nt]
+
+                for terminal, alvo in producoes:
+                    if alvo is not None:
+                        destino = mapa[alvo]
+                    else:
+                        destino = self.nao_terminal
+                        self.estados[f"*{destino}"] = {}
+                        self._incrementar_chave()
+                        self.nao_terminal = self.prox_nao_terminal
+
+                    if terminal not in self.estados[origem_chave]:
+                        self.estados[origem_chave][terminal] = []
+                    self.estados[origem_chave][terminal].append(destino)
+
+                    if terminal not in self.lista_letras:
+                        self.lista_letras.append(terminal)
 
     def _obter_estados_finais(self):
         return {estado.lstrip("*") for estado in self.estados if estado.startswith("*")}
