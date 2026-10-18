@@ -17,15 +17,13 @@ def entrada_dados():
 def main():
     args = entrada_dados()
     g = Gramatica()
+    afnd = Automato_finito()
     g.ler_arquivo(args.arquivo)
 
-    
-    afnd = Automato_finito()
-
-    print(g.palavras_reservadas)
     afnd.processar_palavras(g.palavras_reservadas)
+    afnd.imprimir_tabela(estados=afnd.estados, alfabeto=afnd.lista_letras, titulo="Automato finito não deterministico")
 
-    afnd.imprimir_tabela()
+    afnd.imprimir_tabela(estados=afnd.determinizar(), titulo="Automato finito deterministico")
 
 if __name__ == "__main__":
     main()

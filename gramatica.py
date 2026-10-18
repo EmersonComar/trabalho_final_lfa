@@ -8,16 +8,19 @@ class Gramatica:
     def ler_arquivo(self, caminho_arquivo):
         try:
             with open(caminho_arquivo, "r", encoding="UTF-8") as arquivo:
-                for linha in arquivo:
-                    if "::=" in linha:
-                        pass
-                    else:
-                        linha = linha.strip()
+                todas_linhas = arquivo.readlines()
 
-                        if linha:
-                            if not linha in self.palavras_reservadas:
-                                self.palavras_reservadas.append(linha)
+            i=0
+            while i < len(todas_linhas):
+                linha = todas_linhas[i].strip()
 
+                if "::=" in linha:
+                    pass
+                else:
+                    if linha:
+                        if not linha in self.palavras_reservadas:
+                            self.palavras_reservadas.append(linha)
+                i += 1
 
         except FileNotFoundError as e:
             print(f"Erro: o arquivo {caminho_arquivo} não encontrado")
