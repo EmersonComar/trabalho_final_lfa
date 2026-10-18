@@ -305,7 +305,7 @@ class Automato_finito:
 
         return estados
 
-    def minimizacao(self, estados=None, apontar_erros=True):
+    def minimizacao(self, estados=None, apontar_erros=True, incluir_erro=True):
         if estados is None:
             estados = self.determinizar()
 
@@ -314,5 +314,28 @@ class Automato_finito:
         estados_min = self.remover_mortos(estados_min, apontar_erros=apontar_erros)
         estados_min = self.remover_inalcancaveis(estados_min, apontar_erros=False)
 
+        if incluir_erro:
+            estados_min = self.adicionar_estado_erro(estados=estados_min)
+
         return estados_min
+
+    def adicionar_estado_erro(self, estados=None, alfabeto=None, final=True):
+        if estados is None:
+            estados = self.estados
+        if alfabeto is None:
+            alfabeto = self.lista_letras
+
+        estados_com_erro = copy.deepcopy(estados)
+        nome_base = "ERRO"
+        rotulo_erro = f"*{nome_base}" if final else nome_base
+
+        for estado, transicoes in estados_com_erro.items():
+            for letra in alfabeto:
+                destinos = transicoes.get(letra)
+                if not destinos:
+                    transicoes[letra] = [nome_base]
+
+        estados_com_erro[rotulo_erro] = {letra: [nome_base] for letra in alfabeto}
+
+        return estados_com_erro
 
