@@ -21,6 +21,9 @@ def entrada_dados():
     parser.add_argument(
         "--erro", action="store_true", help="Preencher células do AFD não mapeados com estado ERRO"
     )
+    parser.add_argument(
+        "--debug", action="store_true", help="Visualizar lista de palavras e gramaticas encontradas"
+    )
     args = parser.parse_args()
     return args
 
@@ -33,6 +36,10 @@ def main():
 
     afnd.processar_palavras(g.palavras_reservadas)
     afnd.processar_gramatica(g.gramaticas)
+
+    if args.debug:
+        print(f"Palavras: {g.palavras_reservadas}")
+        g.exibir_gramaticas()
 
     if args.afnd:
         afnd.imprimir_tabela(estados=afnd.estados, alfabeto=afnd.lista_letras, titulo="Automato finito não deterministico")

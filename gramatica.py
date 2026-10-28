@@ -56,3 +56,36 @@ class Gramatica:
             print(f"Erro: usuário sem permissão para ler o arquivo {caminho_arquivo}")
             sys.exit(e.errno)
 
+    def exibir_gramaticas(self):
+        if not self.gramaticas:
+            print("Nenhuma gramática encontrada.")
+            return
+
+        for idx, gramatica in enumerate(self.gramaticas, start=1):
+            if len(self.gramaticas) > 1:
+                print(f"\n--- Gramática {idx} ---")
+            else:
+                print(f"\n--- Gramática ---")
+
+            regras = gramatica.get("regras", {})
+            finais = gramatica.get("finais", set())
+
+            for nt, prods in regras.items():
+                alts = []
+                for terminal, alvo in prods:
+                    if alvo is not None:
+                        alts.append(f"{terminal}<{alvo}>")
+                    else:
+                        alts.append(f"{terminal}")
+
+                if nt in finais:
+                    alts.append("ε")
+
+                print(f"<{nt}> ::= {' | '.join(alts)}")
+
+            for nt in finais:
+                if nt not in regras:
+                    print(f"<{nt}> ::= ε")
+
+    imprimir_gramaticas = exibir_gramaticas
+
